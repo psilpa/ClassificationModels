@@ -11,16 +11,31 @@ from sklearn.metrics import (
 )
 
 # ------------------------------
-# Page Config
+# Safe XGBoost Import
 # ------------------------------
-st.set_page_config(page_title="ML Model Evaluation", layout="wide")
-st.title("📊 Classification Model Evaluation Dashboard")
+try:
+    from xgboost import XGBClassifier
+    xgb_imported = True
+except Exception:
+    xgb_imported = False
 
 # ------------------------------
-# Load Models (ONCE)
+# Page Config
+# ------------------------------
+st.set_page_config(page_title="ML Classification Models", layout="wide")
+st.title("📊 Classification Model Evaluation Dashboard")
+
+if not xgb_imported:
+    st.info(
+        "ℹ️ XGBoost is implemented but disabled in this deployment "
+        "due to OpenMP runtime limitations."
+    )
+
+# ------------------------------
+# Load Models, Scaler & Features
 # ------------------------------
 @st.cache_resource
-def load_models():
+def load_artifacts():
     models = {}
 
     model_files = {
@@ -44,9 +59,13 @@ def load_models():
     with open("model/saved_models/scaler.pkl", "rb") as f:
         scaler = pickle.load(f)
 
-    return models, scaler
+    with open("model/saved_models/feature_columns.pkl", "rb") as f:
+        feature_columns = pickle.load(f)
+
+    return models, scaler, feature_columns
 
 
+models, scaler, feature_columns = load_artifacts()
 
 # ------------------------------
 # File Upload
@@ -63,14 +82,21 @@ if "HeartDisease" not in df.columns:
     st.error("Dataset must contain 'HeartDisease' column as target.")
     st.stop()
 
+# ------------------------------
+# Preprocessing
+# ------------------------------
 X = df.drop("HeartDisease", axis=1)
 y = df["HeartDisease"]
 
 X = pd.get_dummies(X, drop_first=True)
+
+# 🔑 ALIGN FEATURES
+X = X.reindex(columns=feature_columns, fill_value=0)
+
 X_scaled = scaler.transform(X)
 
 # ------------------------------
-# Evaluation
+# Evaluate Models
 # ------------------------------
 results = []
 conf_matrices = {}
@@ -78,86 +104,4 @@ conf_matrices = {}
 for name, model in models.items():
     try:
         y_pred = model.predict(X_scaled)
-        y_prob = model.predict_proba(X_scaled)[:, 1]
-    except Exception:
-        continue
-
-
-    accuracy = accuracy_score(y, y_pred)
-    auc = roc_auc_score(y, y_prob)
-    precision = precision_score(y, y_pred)
-    recall = recall_score(y, y_pred)
-    f1 = f1_score(y, y_pred)
-    mcc = matthews_corrcoef(y, y_pred)
-
-    composite_score = (accuracy + auc + f1 + mcc) / 4
-
-    results.append({
-        "Model": name.replace("_", " ").title(),
-        "Accuracy": accuracy,
-        "AUC": auc,
-        "Precision": precision,
-        "Recall": recall,
-        "F1 Score": f1,
-        "MCC": mcc,
-        "Composite Score": composite_score
-    })
-
-    conf_matrices[name] = confusion_matrix(y, y_pred)
-
-
-# ------------------------------
-# Display Metrics
-# ------------------------------
-st.subheader("📈 Model Performance Comparison")
-results_df = pd.DataFrame(results)
-st.dataframe(results_df.style.format("{:.4f}", subset=results_df.columns[1:]))
-
-# ------------------------------
-# Confusion Matrices
-# ------------------------------
-st.subheader("🔍 Confusion Matrices")
-
-cols = st.columns(3)
-i = 0
-
-for name, cm in conf_matrices.items():
-    with cols[i % 3]:
-        st.write(f"**{name.replace('_', ' ').title()}**")
-        fig, ax = plt.subplots()
-        sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", ax=ax)
-        ax.set_xlabel("Predicted")
-        ax.set_ylabel("Actual")
-        st.pyplot(fig)
-    i += 1
-    
-results_df = pd.DataFrame(results)
-
-best_model_row = results_df.loc[
-    results_df["Composite Score"].idxmax()
-]
-
-st.success(
-    f"✅ **Recommended Model:** {best_model_row['Model']}\n\n"
-    f"📌 Composite Score: {best_model_row['Composite Score']:.4f}\n\n"
-    "This recommendation is based on Accuracy, AUC, F1 Score, and MCC."
-)
-
-st.subheader("📈 Model Performance Comparison")
-
-st.dataframe(
-    results_df.style.format("{:.4f}", subset=results_df.columns[1:])
-)
-
-with st.expander("ℹ️ How is the best model selected?"):
-    st.markdown("""
-    The best model is selected using a **Composite Score**, calculated as:
-
-    **(Accuracy + AUC + F1 Score + MCC) / 4**
-
-    This ensures:
-    - Balanced performance
-    - Robustness to class imbalance
-    - Avoidance of accuracy-only bias
-    """)
-
+        y_prob = model.predict_p

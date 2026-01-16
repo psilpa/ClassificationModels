@@ -26,19 +26,29 @@ df = pd.read_csv("../data/heart.csv")
 X = df.drop("HeartDisease", axis=1)
 y = df["HeartDisease"]
 
+# One-hot encoding
 X = pd.get_dummies(X, drop_first=True)
 
+# ------------------------------
+# Save Feature Columns
+# ------------------------------
+os.makedirs("saved_models", exist_ok=True)
+
+feature_columns = X.columns.tolist()
+with open("saved_models/feature_columns.pkl", "wb") as f:
+    pickle.dump(feature_columns, f)
+
+# ------------------------------
+# Scaling
+# ------------------------------
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
 
-os.makedirs("saved_models", exist_ok=True)
-
-# Save scaler
 with open("saved_models/scaler.pkl", "wb") as f:
     pickle.dump(scaler, f)
 
 # ------------------------------
-# Models
+# Define Models
 # ------------------------------
 models = {
     "logistic": LogisticRegression(max_iter=1000),
@@ -58,11 +68,12 @@ else:
     print("⚠️ XGBoost not available. Skipping XGBoost training.")
 
 # ------------------------------
-# Train & Save
+# Train & Save Models
 # ------------------------------
 for name, model in models.items():
     model.fit(X_scaled, y)
     with open(f"saved_models/{name}.pkl", "wb") as f:
         pickle.dump(model, f)
+    print(f"✅ Saved {name} model")
 
-print("✅ Model training completed.")
+print("🎉 Training completed successfully.")
