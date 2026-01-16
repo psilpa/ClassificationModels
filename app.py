@@ -134,8 +134,12 @@ for name, model in models.items():
 # Results Table
 # ------------------------------
 st.subheader("📈 Model Performance Comparison")
-results_df = pd.DataFrame(results)
-st.dataframe(results_df.style.format("{:.4f}", subset=results_df.columns[1:]))
+results_df.index = range(1, len(results_df) + 1)
+results_df.index.name = "S.No"
+
+st.dataframe(
+    results_df.style.format("{:.4f}", subset=results_df.columns[1:])
+)
 
 # ------------------------------
 # Best Model Recommendation
