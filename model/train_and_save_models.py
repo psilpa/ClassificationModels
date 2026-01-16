@@ -9,7 +9,15 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 
-from xgboost import XGBClassifier
+# ------------------------------
+# Safe XGBoost Import
+# ------------------------------
+try:
+    from xgboost import XGBClassifier
+    xgb_imported = True
+except Exception:
+    xgb_imported = False
+
 
 # ------------------------------
 # Load Dataset

@@ -22,21 +22,24 @@ st.title("📊 Classification Model Evaluation Dashboard")
 @st.cache_resource
 def load_models():
     models = {}
-    model_names = [
-        "logistic",
-        "decision_tree",
-        "knn",
-        "naive_bayes",
-        "random_forest",
-        "xgboost"
-    ]
 
-    for name in model_names:
+    model_files = {
+        "Logistic Regression": "logistic.pkl",
+        "Decision Tree": "decision_tree.pkl",
+        "KNN": "knn.pkl",
+        "Naive Bayes": "naive_bayes.pkl",
+        "Random Forest": "random_forest.pkl"
+    }
+
+    if xgb_imported:
+        model_files["XGBoost"] = "xgboost.pkl"
+
+    for name, file in model_files.items():
         try:
-            with open(f"model/saved_models/{name}.pkl", "rb") as f:
+            with open(f"model/saved_models/{file}", "rb") as f:
                 models[name] = pickle.load(f)
-        except:
-            pass
+        except Exception:
+            st.warning(f"⚠️ {name} model could not be loaded.")
 
     with open("model/saved_models/scaler.pkl", "rb") as f:
         scaler = pickle.load(f)
@@ -44,7 +47,6 @@ def load_models():
     return models, scaler
 
 
-models, scaler = load_models()
 
 # ------------------------------
 # File Upload
@@ -74,8 +76,12 @@ results = []
 conf_matrices = {}
 
 for name, model in models.items():
-    y_pred = model.predict(X_scaled)
-    y_prob = model.predict_proba(X_scaled)[:, 1]
+    try:
+        y_pred = model.predict(X_scaled)
+        y_prob = model.predict_proba(X_scaled)[:, 1]
+    except Exception:
+        continue
+
 
     accuracy = accuracy_score(y, y_pred)
     auc = roc_auc_score(y, y_prob)
