@@ -134,6 +134,7 @@ for name, model in models.items():
 # Results Table
 # ------------------------------
 st.subheader("📈 Model Performance Comparison")
+results_df = pd.DataFrame(results)
 results_df.index = range(1, len(results_df) + 1)
 results_df.index.name = "S.No"
 
