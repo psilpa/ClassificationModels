@@ -9,140 +9,124 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.ensemble import RandomForestClassifier
-from xgboost import XGBClassifier
 
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import (
     accuracy_score, roc_auc_score, precision_score,
     recall_score, f1_score, matthews_corrcoef,
-    confusion_matrix, classification_report
+    confusion_matrix
 )
 
 # ------------------------------
-# Page Configuration
+# Try importing XGBoost safely
 # ------------------------------
-st.set_page_config(
-    page_title="ML Classification Model Comparison",
-    layout="centered"
-)
-
-st.title("📊 Machine Learning Classification Models")
-st.write("Upload test data and evaluate different ML classification models.")
+try:
+    from xgboost import XGBClassifier
+    xgb_available = True
+except ImportError:
+    xgb_available = False
 
 # ------------------------------
-# Dataset Upload
+# Page Config
 # ------------------------------
-uploaded_file = st.file_uploader(
-    "Upload Test Dataset (CSV)",
-    type=["csv"]
-)
+st.set_page_config(page_title="ML Model Evaluation", layout="wide")
+st.title("📊 Classification Model Evaluation Dashboard")
+st.write("Upload a test dataset to evaluate multiple ML classification models.")
 
-if uploaded_file is not None:
-    df = pd.read_csv(uploaded_file)
+# ------------------------------
+# File Upload
+# ------------------------------
+uploaded_file = st.file_uploader("Upload Test Dataset (CSV)", type=["csv"])
 
-    if "HeartDisease" not in df.columns:
-        st.error("Dataset must contain 'HeartDisease' column as target.")
-        st.stop()
+if uploaded_file is None:
+    st.info("Please upload a CSV file to begin.")
+    st.stop()
 
-    X = df.drop("HeartDisease", axis=1)
-    y = df["HeartDisease"]
+df = pd.read_csv(uploaded_file)
 
-    X = pd.get_dummies(X, drop_first=True)
+if "HeartDisease" not in df.columns:
+    st.error("Dataset must contain 'HeartDisease' column as target.")
+    st.stop()
 
-    scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(X)
+# ------------------------------
+# Data Preprocessing
+# ------------------------------
+X = df.drop("HeartDisease", axis=1)
+y = df["HeartDisease"]
 
-    # ------------------------------
-    # Model Selection
-    # ------------------------------
-    model_name = st.selectbox(
-        "Select Machine Learning Model",
-        (
-            "Logistic Regression",
-            "Decision Tree",
-            "K-Nearest Neighbors",
-            "Naive Bayes",
-            "Random Forest (Ensemble)",
-            "XGBoost (Ensemble)"
-        )
+X = pd.get_dummies(X, drop_first=True)
+
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+# ------------------------------
+# Define Models
+# ------------------------------
+models = {
+    "Logistic Regression": LogisticRegression(max_iter=1000),
+    "Decision Tree": DecisionTreeClassifier(random_state=42),
+    "KNN": KNeighborsClassifier(n_neighbors=5),
+    "Naive Bayes": GaussianNB(),
+    "Random Forest": RandomForestClassifier(n_estimators=100, random_state=42),
+}
+
+if xgb_available:
+    models["XGBoost"] = XGBClassifier(
+        use_label_encoder=False,
+        eval_metric="logloss",
+        random_state=42
     )
 
-    # ------------------------------
-    # Model Initialization
-    # ------------------------------
-    if model_name == "Logistic Regression":
-        model = LogisticRegression(max_iter=1000)
+# ------------------------------
+# Train & Evaluate
+# ------------------------------
+results = []
 
-    elif model_name == "Decision Tree":
-        model = DecisionTreeClassifier(random_state=42)
+confusion_matrices = {}
 
-    elif model_name == "K-Nearest Neighbors":
-        model = KNeighborsClassifier(n_neighbors=5)
-
-    elif model_name == "Naive Bayes":
-        model = GaussianNB()
-
-    elif model_name == "Random Forest (Ensemble)":
-        model = RandomForestClassifier(n_estimators=100, random_state=42)
-
-    elif model_name == "XGBoost (Ensemble)":
-        model = XGBClassifier(
-            use_label_encoder=False,
-            eval_metric="logloss",
-            random_state=42
-        )
-
-    # ------------------------------
-    # Train Model
-    # ------------------------------
+for name, model in models.items():
     model.fit(X_scaled, y)
 
     y_pred = model.predict(X_scaled)
     y_prob = model.predict_proba(X_scaled)[:, 1]
 
-    # ------------------------------
-    # Metrics Calculation
-    # ------------------------------
-    accuracy = accuracy_score(y, y_pred)
-    auc = roc_auc_score(y, y_prob)
-    precision = precision_score(y, y_pred)
-    recall = recall_score(y, y_pred)
-    f1 = f1_score(y, y_pred)
-    mcc = matthews_corrcoef(y, y_pred)
+    metrics = {
+        "Model": name,
+        "Accuracy": accuracy_score(y, y_pred),
+        "AUC": roc_auc_score(y, y_prob),
+        "Precision": precision_score(y, y_pred),
+        "Recall": recall_score(y, y_pred),
+        "F1 Score": f1_score(y, y_pred),
+        "MCC": matthews_corrcoef(y, y_pred)
+    }
 
-    # ------------------------------
-    # Display Metrics
-    # ------------------------------
-    st.subheader("📈 Model Evaluation Metrics")
+    results.append(metrics)
+    confusion_matrices[name] = confusion_matrix(y, y_pred)
 
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Accuracy", f"{accuracy:.4f}")
-    col2.metric("AUC Score", f"{auc:.4f}")
-    col3.metric("Precision", f"{precision:.4f}")
+# ------------------------------
+# Metrics Table
+# ------------------------------
+st.subheader("📈 Model Performance Comparison")
 
-    col4, col5, col6 = st.columns(3)
-    col4.metric("Recall", f"{recall:.4f}")
-    col5.metric("F1 Score", f"{f1:.4f}")
-    col6.metric("MCC", f"{mcc:.4f}")
+results_df = pd.DataFrame(results)
+st.dataframe(
+    results_df.style.format("{:.4f}", subset=results_df.columns[1:])
+)
 
-    # ------------------------------
-    # Confusion Matrix
-    # ------------------------------
-    st.subheader("🔍 Confusion Matrix")
+# ------------------------------
+# Confusion Matrices
+# ------------------------------
+st.subheader("🔍 Confusion Matrices")
 
-    cm = confusion_matrix(y, y_pred)
+cols = st.columns(3)
+i = 0
 
-    fig, ax = plt.subplots()
-    sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", ax=ax)
-    ax.set_xlabel("Predicted Label")
-    ax.set_ylabel("True Label")
-    st.pyplot(fig)
-
-    # ------------------------------
-    # Classification Report
-    # ------------------------------
-    st.subheader("📄 Classification Report")
-    st.text(classification_report(y, y_pred))
-
-else:
-    st.info("Please upload a CSV file to begin.")
+for model_name, cm in confusion_matrices.items():
+    with cols[i % 3]:
+        st.write(f"**{model_name}**")
+        fig, ax = plt.subplots()
+        sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", ax=ax)
+        ax.set_xlabel("Predicted")
+        ax.set_ylabel("Actual")
+        st.pyplot(fig)
+    i += 1
