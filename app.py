@@ -104,4 +104,70 @@ conf_matrices = {}
 for name, model in models.items():
     try:
         y_pred = model.predict(X_scaled)
-        y_prob = model.predict_p
+        y_prob = model.predict_proba(X_scaled)[:, 1]
+    except Exception:
+        continue
+
+    accuracy = accuracy_score(y, y_pred)
+    auc = roc_auc_score(y, y_prob)
+    precision = precision_score(y, y_pred)
+    recall = recall_score(y, y_pred)
+    f1 = f1_score(y, y_pred)
+    mcc = matthews_corrcoef(y, y_pred)
+
+    composite = (accuracy + auc + f1 + mcc) / 4
+
+    results.append({
+        "Model": name,
+        "Accuracy": accuracy,
+        "AUC": auc,
+        "Precision": precision,
+        "Recall": recall,
+        "F1 Score": f1,
+        "MCC": mcc,
+        "Composite Score": composite
+    })
+
+    conf_matrices[name] = confusion_matrix(y, y_pred)
+
+# ------------------------------
+# Results Table
+# ------------------------------
+st.subheader("📈 Model Performance Comparison")
+results_df = pd.DataFrame(results)
+st.dataframe(results_df.style.format("{:.4f}", subset=results_df.columns[1:]))
+
+# ------------------------------
+# Best Model Recommendation
+# ------------------------------
+best_row = results_df.loc[results_df["Composite Score"].idxmax()]
+
+st.success(
+    f"✅ **Recommended Model:** {best_row['Model']}  \n"
+    f"📌 Composite Score: {best_row['Composite Score']:.4f}"
+)
+
+with st.expander("ℹ️ How is the best model selected?"):
+    st.markdown("""
+    **Composite Score = (Accuracy + AUC + F1 Score + MCC) / 4**
+
+    This ensures balanced and robust model selection.
+    """)
+
+# ------------------------------
+# Confusion Matrices
+# ------------------------------
+st.subheader("🔍 Confusion Matrices")
+
+cols = st.columns(3)
+i = 0
+
+for name, cm in conf_matrices.items():
+    with cols[i % 3]:
+        st.write(f"**{name}**")
+        fig, ax = plt.subplots()
+        sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", ax=ax)
+        ax.set_xlabel("Predicted")
+        ax.set_ylabel("Actual")
+        st.pyplot(fig)
+    i += 1
