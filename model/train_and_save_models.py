@@ -14,10 +14,9 @@ from sklearn.preprocessing import StandardScaler
 # ------------------------------
 try:
     from xgboost import XGBClassifier
-    xgb_imported = True
+    xgb_available = True
 except Exception:
-    xgb_imported = False
-
+    xgb_available = False
 
 # ------------------------------
 # Load Dataset
@@ -46,13 +45,17 @@ models = {
     "decision_tree": DecisionTreeClassifier(random_state=42),
     "knn": KNeighborsClassifier(n_neighbors=5),
     "naive_bayes": GaussianNB(),
-    "random_forest": RandomForestClassifier(n_estimators=100, random_state=42),
-    "xgboost": XGBClassifier(
+    "random_forest": RandomForestClassifier(n_estimators=100, random_state=42)
+}
+
+if xgb_available:
+    models["xgboost"] = XGBClassifier(
         use_label_encoder=False,
         eval_metric="logloss",
         random_state=42
     )
-}
+else:
+    print("⚠️ XGBoost not available. Skipping XGBoost training.")
 
 # ------------------------------
 # Train & Save
@@ -62,4 +65,4 @@ for name, model in models.items():
     with open(f"saved_models/{name}.pkl", "wb") as f:
         pickle.dump(model, f)
 
-print("✅ All models trained and saved successfully")
+print("✅ Model training completed.")
