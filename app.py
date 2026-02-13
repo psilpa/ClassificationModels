@@ -154,6 +154,22 @@ st.dataframe(
     results_df.style.format("{:.4f}", subset=results_df.columns[1:])
 )
 
+
+model_observations = {
+    "Logistic Regression": "Performed well on linear data, but struggled with complex patterns. Fast and interpretable.",
+    "Decision Tree": "Good accuracy on the training set, but tended to overfit. Less stable than ensemble methods.",
+    "kNN": "Sensitive to the choice of k and scaling. Performance declined with high-dimensional data.",
+    "Naive Bayes": "Worked efficiently on categorical data. Assumption of feature independence limited accuracy.",
+    "Random Forest (Ensemble)": "Provided strong generalization and improved accuracy. Robust to overfitting and handled feature importance well.",
+    "XGBoost (Ensemble)": "Delivered the highest accuracy, especially with tuned parameters. Excellent performance and scalability."
+}
+
+st.title("Observations about model performance")
+
+st.table([
+    {"ML Model Name": model, "Observation about model performance": obs}
+    for model, obs in model_observations.items()
+])
 # ------------------------------
 # Best Model Recommendation
 # ------------------------------
