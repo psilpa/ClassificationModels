@@ -56,6 +56,10 @@ def load_artifacts():
             with open(f"model/saved_models/{file}", "rb") as f:
                 models[name] = pickle.load(f)
         except Exception:
+            if name == XGBoost:
+                import xgboost as xgb
+                bst = xgb.Booster()
+                bst.load_model('xgboost.json')
             st.warning(f"⚠️ {name} model could not be loaded.")
 
     with open("model/saved_models/scaler.pkl", "rb") as f:
