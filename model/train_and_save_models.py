@@ -107,4 +107,5 @@ for name, model in models.items():
         pickle.dump(model, f)
     print(f"✅ Saved {name} model")
 
+models["xgboos"].get_booster.save_model("saved_models/xgboost.json")
 print("🎉 Training completed successfully.")
