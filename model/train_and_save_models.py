@@ -33,7 +33,7 @@ def load_and_split_data(csv_path):
     )
 
     if isinstance(y_test, pd.Series):
-        y_test = y_test.to_frame(name='target')
+        y_test = y_test.to_frame(name='HeartDisease')
 
     # Concatenate X_val and y_val horizontally
     val_data = pd.concat([X_test.reset_index(drop=True), y_test.reset_index(drop=True)], axis=1)

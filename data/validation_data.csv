@@ -1,4 +1,4 @@
-Age,RestingBP,Cholesterol,FastingBS,MaxHR,Oldpeak,Sex_M,ChestPainType_ATA,ChestPainType_NAP,ChestPainType_TA,RestingECG_Normal,RestingECG_ST,ExerciseAngina_Y,ST_Slope_Flat,ST_Slope_Up,target
+Age,RestingBP,Cholesterol,FastingBS,MaxHR,Oldpeak,Sex_M,ChestPainType_ATA,ChestPainType_NAP,ChestPainType_TA,RestingECG_Normal,RestingECG_ST,ExerciseAngina_Y,ST_Slope_Flat,ST_Slope_Up,HeartDisease
 46,115,0,0,113,1.5,True,False,False,False,True,False,True,True,False,1
 58,132,224,0,173,3.2,True,False,True,False,False,False,False,False,True,1
 60,125,258,0,141,2.8,True,False,False,False,False,False,True,True,False,1
