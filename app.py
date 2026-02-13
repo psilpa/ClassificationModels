@@ -70,7 +70,7 @@ models, scaler, feature_columns = load_artifacts()
 # ------------------------------
 # Sample File Download
 # ------------------------------
-df = pd.read_csv("validation_data.csv")
+df = pd.read_csv("data/validation_data.csv")
 st.download_button("Download CSV", df.to_csv(index=False), "validation_data.csv", "text/csv")
 
 # ------------------------------

@@ -2,6 +2,7 @@ import pandas as pd
 import pickle
 import os
 
+from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.neighbors import KNeighborsClassifier
@@ -18,13 +19,43 @@ try:
 except Exception:
     xgb_available = False
 
+
+def load_and_split_data(csv_path):
+    df = pd.read_csv(csv_path)
+
+    X = df.drop("HeartDisease", axis=1)
+    y = df["HeartDisease"]
+
+    X = pd.get_dummies(X, drop_first=True)
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42, stratify=y
+    )
+
+    if isinstance(y_test, pd.Series):
+        y_test = y_test.to_frame(name='target')
+
+    # Concatenate X_val and y_val horizontally
+    val_data = pd.concat([X_test.reset_index(drop=True), y_test.reset_index(drop=True)], axis=1)
+
+    # Write to CSV
+    print("Writing validation data to a file")
+    val_data.to_csv('../data/validation_data.csv', index=False)
+
+    #scaler = StandardScaler()
+    #X_train = scaler.fit_transform(X_train)
+    #X_test = scaler.transform(X_test)
+
+    return X_train, y_train
+    
 # ------------------------------
 # Load Dataset
 # ------------------------------
-df = pd.read_csv("../data/heart.csv")
+#df = pd.read_csv("../data/heart.csv")
 
-X = df.drop("HeartDisease", axis=1)
-y = df["HeartDisease"]
+#X = df.drop("HeartDisease", axis=1)
+#y = df["HeartDisease"]
+X,y = load_and_split_data("../data/heart.csv")
 
 # One-hot encoding
 X = pd.get_dummies(X, drop_first=True)

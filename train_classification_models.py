@@ -23,12 +23,13 @@ def load_and_split_data(csv_path):
     )
 
     if isinstance(y_val, pd.Series):
-    y_val = y_val.to_frame(name='target')
+        y_val = y_val.to_frame(name='target')
 
     # Concatenate X_val and y_val horizontally
     val_data = pd.concat([X_val.reset_index(drop=True), y_val.reset_index(drop=True)], axis=1)
 
     # Write to CSV
+    print("Writing validation data to a file")
     val_data.to_csv('validation_data.csv', index=False)
 
     scaler = StandardScaler()
