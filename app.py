@@ -68,6 +68,11 @@ def load_artifacts():
 models, scaler, feature_columns = load_artifacts()
 
 # ------------------------------
+# Sample File Download
+# ------------------------------
+st.download_button("Download CSV", df.to_csv(index=False), "validation_data.csv", "text/csv")
+
+# ------------------------------
 # File Upload
 # ------------------------------
 uploaded_file = st.file_uploader("Upload Test Dataset (CSV)", type=["csv"])
