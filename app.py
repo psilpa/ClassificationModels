@@ -17,7 +17,7 @@ try:
     from xgboost import XGBClassifier
     xgb_imported = True
 except Exception:
-    xgb_imported = False
+    xgb_imported = True
 
 # ------------------------------
 # Page Config
