@@ -50,6 +50,8 @@ def load_artifacts():
         model_files["XGBoost"] = "xgboost.pkl"
 
     for name, file in model_files.items():
+        with open(f"model/saved_models/{file}", "rb") as f:
+                models[name] = pickle.load(f)
         try:
             with open(f"model/saved_models/{file}", "rb") as f:
                 models[name] = pickle.load(f)
