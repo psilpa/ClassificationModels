@@ -47,7 +47,7 @@ def load_artifacts():
     }
 
     if xgb_imported:
-        model_files["XGBoost"] = "xgboost.pkl"
+        model_files["XGBoost"] = "xgboost_model.pkl"
 
     for name, file in model_files.items():
         try:
